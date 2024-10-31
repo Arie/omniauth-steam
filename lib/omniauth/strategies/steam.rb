@@ -40,16 +40,22 @@ module OmniAuth
       end
 
       def callback_phase
-        return fail!(:invalid_credentials) if invalid_params?
+        return fail!(:invalid_credentials) unless valid_params? && valid_openid?
 
         super
       end
 
       private
 
-      def invalid_params?
-        request.params.keys.any? do |key|
-          !allowed_params.include?(key)
+      def valid_openid?
+        request.params['openid.ns'] == 'http://specs.openid.net/auth/2.0' &&
+          request.params['openid.identity'].start_with?('https://steamcommunity.com/openid/id/') &&
+          request.params['openid.claimed_id'].start_with?('https://steamcommunity.com/openid/id/')
+      end
+
+      def valid_params?
+        request.params.keys.all? do |key|
+          allowed_params.include?(key)
         end
       end
 

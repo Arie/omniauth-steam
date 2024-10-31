@@ -39,7 +39,35 @@ module OmniAuth
         end
       end
 
+      def callback_phase
+        return fail!(:invalid_credentials) if invalid_params?
+
+        super
+      end
+
       private
+
+      def invalid_params?
+        request.params.keys.any? do |key|
+          !allowed_params.include?(key)
+        end
+      end
+
+      def allowed_params
+        [
+          '_method',
+          'openid.ns',
+          'openid.mode',
+          'openid.op_endpoint',
+          'openid.claimed_id',
+          'openid.identity',
+          'openid.return_to',
+          'openid.response_nonce',
+          'openid.assoc_handle',
+          'openid.signed',
+          'openid.sig'
+        ]
+      end
 
       def raw_info
         @raw_info ||= options.api_key ? MultiJson.decode(Net::HTTP.get(player_profile_uri)) : {}

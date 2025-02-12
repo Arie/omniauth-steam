@@ -1,14 +1,33 @@
 require 'omniauth-openid'
 require 'multi_json'
+require 'openid/fetchers'
 
 module OmniAuth
   module Strategies
     class Steam < OmniAuth::Strategies::OpenID
+      class SteamFetcher < ::OpenID::StandardFetcher
+        def fetch(url, body=nil, headers=nil, redirect_limit=5)
+          headers ||= {}
+          if url.to_s.include?('steamcommunity.com/openid/login')
+            headers['Origin'] = 'https://steamcommunity.com'
+          end
+          super(url, body, headers, redirect_limit)
+        end
+      end
+
       args :api_key
 
       option :api_key, nil
       option :name, "steam"
       option :identifier, "http://steamcommunity.com/openid"
+
+      def setup_phase
+        existing_fetcher = ::OpenID.fetcher
+        fetcher = SteamFetcher.new
+        fetcher.ca_file = existing_fetcher.ca_file if existing_fetcher.respond_to?(:ca_file)
+        ::OpenID.fetcher = fetcher
+        super
+      end
 
       uid { steam_id }
 
